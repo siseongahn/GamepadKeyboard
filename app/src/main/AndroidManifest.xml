@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 다른 앱 위에 그리기: TYPE_APPLICATION_OVERLAY 윈도우를 추가하려면 필수.
+         선언만으로는 부족하고 Settings.canDrawOverlays() 로 사용자 승인을 받아야 한다. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <application
+        android:allowBackup="false"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.KeyboardOverlay">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 좌표에 실제 터치 제스처를 주입하는 접근성 서비스.
+             BIND_ACCESSIBILITY_SERVICE 로 보호해야 시스템만 바인드할 수 있다.
+             사용자가 설정에서 켜야 동작한다 (adb: settings put secure enabled_accessibility_services ...). -->
+        <service
+            android:name=".TapInjectionService"
+            android:exported="true"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/tap_injection_service" />
+        </service>
+    </application>
+
+</manifest>

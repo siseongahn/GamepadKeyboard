@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dialog 방식 아이콘 배경. WindowManager 방식(파랑)과 구분하려고 주황색을 쓴다. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#E6FF6D00" />
+    <stroke
+        android:width="2dp"
+        android:color="#FFFFFFFF" />
+</shape>

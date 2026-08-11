@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dialog 방식 오버레이의 내용물. 배경이 투명이라 게임패드 커서가 놓인 자리만 키보드를 가린다. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/overlay_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <!-- 게임패드로 움직이는 커서. translationX/Y 로 옮기므로 기준점은 top|start 로 고정한다.
+         이 창은 NOT_TOUCHABLE 이라 커서가 터치를 가로채지 않는다 (주입 제스처도 그대로 통과). -->
+    <!-- contentDescription 을 주면 `adb shell uiautomator dump` 에 bounds 가 찍혀
+         커서 위치를 외부에서 그대로 읽을 수 있다 (실측 스크립트가 이걸 쓴다). -->
+    <View
+        android:id="@+id/overlay_cursor"
+        android:layout_width="@dimen/cursor_size"
+        android:layout_height="@dimen/cursor_size"
+        android:layout_gravity="top|start"
+        android:background="@drawable/bg_cursor"
+        android:contentDescription="@string/gamepad_cursor" />
+
+</FrameLayout>

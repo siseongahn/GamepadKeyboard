@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="overlay_icon_size">56dp</dimen>
+    <dimen name="overlay_icon_gap">10dp</dimen>
+    <dimen name="cursor_size">40dp</dimen>
+    <!-- DPAD 한 번에 움직이는 거리. 키 하나 폭(대략 36dp)보다 작게 잡아 키 안에서 미세 조정이 되게. -->
+    <dimen name="cursor_step">12dp</dimen>
+</resources>

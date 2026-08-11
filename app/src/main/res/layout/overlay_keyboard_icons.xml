@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  키보드 영역과 같은 크기로 붙는 오버레이 루트.
+  배경은 투명이라 아이콘이 놓인 자리만 키보드가 가려진다.
+  전체를 덮고 싶다면 루트에 android:background="#CC000000" 같은 색을 주면 된다.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent"
+    android:clickable="true"
+    android:focusable="false">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="@dimen/overlay_icon_size"
+            android:layout_height="@dimen/overlay_icon_size"
+            android:layout_marginHorizontal="@dimen/overlay_icon_gap"
+            android:alpha="0.9"
+            android:background="@drawable/bg_overlay_icon"
+            android:contentDescription="@string/icon_lock"
+            android:padding="12dp"
+            android:src="@drawable/ic_lock"
+            android:tint="@android:color/white" />
+
+        <ImageView
+            android:layout_width="@dimen/overlay_icon_size"
+            android:layout_height="@dimen/overlay_icon_size"
+            android:layout_marginHorizontal="@dimen/overlay_icon_gap"
+            android:alpha="0.9"
+            android:background="@drawable/bg_overlay_icon"
+            android:contentDescription="@string/icon_shield"
+            android:padding="12dp"
+            android:src="@drawable/ic_shield"
+            android:tint="@android:color/white" />
+
+        <ImageView
+            android:layout_width="@dimen/overlay_icon_size"
+            android:layout_height="@dimen/overlay_icon_size"
+            android:layout_marginHorizontal="@dimen/overlay_icon_gap"
+            android:alpha="0.9"
+            android:background="@drawable/bg_overlay_icon"
+            android:contentDescription="@string/icon_star"
+            android:padding="12dp"
+            android:src="@drawable/ic_star"
+            android:tint="@android:color/white" />
+    </LinearLayout>
+
+    <!-- 키보드 우상단 모서리를 가리는 배지 예시 -->
+    <ImageView
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="8dp"
+        android:alpha="0.9"
+        android:background="@drawable/bg_overlay_icon"
+        android:contentDescription="@string/icon_shield"
+        android:padding="8dp"
+        android:src="@drawable/ic_shield"
+        android:tint="@android:color/white" />
+
+</FrameLayout>

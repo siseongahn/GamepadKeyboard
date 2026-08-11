@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  제스처 주입 전용 설정.
+  - canPerformGestures="true" 가 dispatchGesture() 를 쓰기 위한 필수 조건 (API 24+).
+  - 화면 내용을 읽을 필요가 없으므로 canRetrieveWindowContent 는 켜지 않는다 (기본 false).
+    좌표만 있으면 되고, 권한 범위를 최소로 유지하는 편이 심사에도 유리하다.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:canPerformGestures="true"
+    android:description="@string/accessibility_service_description"
+    android:notificationTimeout="100" />

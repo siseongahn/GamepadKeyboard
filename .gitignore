@@ -1,0 +1,12 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+# Claude Code 로컬 세션 설정 (머신별 경로·허용목록이라 공유 대상이 아니다)
+.claude/settings.local.json
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
