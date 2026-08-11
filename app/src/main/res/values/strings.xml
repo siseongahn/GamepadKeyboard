@@ -11,7 +11,11 @@
     <string name="input_hint">여기를 눌러 시스템 키보드를 띄우세요</string>
     <string name="dialog_overlay_toggle">권한 없이 Dialog 로 덮기 (ALT_FOCUSABLE_IM)</string>
 
-    <string name="accessibility_settings">접근성 서비스 설정 열기 (좌표 클릭 주입)</string>
+    <string name="accessibility_settings">접근성 서비스 켜기 (좌표 클릭 주입)</string>
+    <string name="accessibility_already_on">이미 연결돼 있습니다.</string>
+    <string name="accessibility_self_enabled">코드로 켰습니다 (WRITE_SECURE_SETTINGS). 연결까지 잠시 걸립니다.</string>
+    <string name="accessibility_self_failed">설정 쓰기에 실패했습니다.</string>
+    <string name="accessibility_open_settings_hint">설정에서 GamePadKeyboard 를 켜주세요. 앱이 직접 켤 수는 없습니다.</string>
     <string name="accessibility_service_label">키보드 오버레이 좌표 클릭</string>
     <string name="accessibility_service_description">게임패드 커서 위치에 터치를 주입해 키보드 키를 누릅니다. 좌표 클릭만 사용하고 화면 내용은 읽지 않습니다.</string>
     <string name="accessibility_needed">접근성 서비스가 꺼져 있습니다. 설정에서 켜주세요.</string>
@@ -19,7 +23,7 @@
 
     <string name="status_format">권한: %1$s\n키보드 높이: %2$s\n오버레이 설정: %3$s\n오버레이 표시중: %4$b\n좌표 클릭 주입: %5$s</string>
 
-    <string name="help_text">키보드가 올라오면 그 높이만큼 TYPE_APPLICATION_OVERLAY 윈도우가 붙고, 아이콘이 놓인 자리만 키보드가 가려집니다. 기본 설정에서는 터치가 오버레이를 통과하므로 타이핑은 그대로 동작합니다.</string>
+    <string name="help_text">키보드가 올라오면 그 높이만큼 오버레이 윈도우가 붙습니다. 기본 설정에서는 터치가 오버레이를 통과하므로 타이핑이 그대로 동작합니다.\n\n게임패드 사용: 접근성 서비스를 켠 뒤 키보드와 오버레이를 띄우고, DPAD 로 초록 커서를 옮겨 A 버튼을 누르면 그 좌표의 키가 입력됩니다.</string>
 
     <string name="gamepad_cursor">게임패드 커서</string>
     <string name="icon_lock">잠금 아이콘</string>

@@ -78,9 +78,7 @@ class MainActivity : AppCompatActivity() {
             syncOverlay()
         }
 
-        binding.btnAccessibility.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        }
+        binding.btnAccessibility.setOnClickListener { grantAccessibility() }
 
         // 주입 결과를 외부에서 읽기 위한 로그.
         // 이 앱의 접근성 서비스가 켜지면 `uiautomator dump` 가 루트 노드를 못 가져오므로
@@ -159,6 +157,37 @@ class MainActivity : AppCompatActivity() {
     private fun hideKeyboard() {
         getSystemService<InputMethodManager>()
             ?.hideSoftInputFromWindow(binding.editInput.windowToken, 0)
+    }
+
+    /**
+     * 접근성 서비스를 켠다. 가능한 최선의 경로를 고른다.
+     *
+     * `WRITE_SECURE_SETTINGS` 가 있으면(= adb 로 부여했거나 시스템 서명) 코드로 바로 켜고,
+     * 없으면 설정의 **이 서비스 상세 페이지**로 보낸다. 일반 배포에서는 후자만 가능하다 —
+     * 앱이 스스로 접근성 권한을 얻는 방법은 존재하지 않는다.
+     */
+    private fun grantAccessibility() {
+        if (TapInjectionService.isConnected) {
+            // 이미 연결됨. 껐다 켜는 재바인드 용도로도 쓰이므로 상태만 알린다.
+            Toast.makeText(this, R.string.accessibility_already_on, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (AccessibilityPermission.canWriteSecureSettings(this)) {
+            // 설정에 남아 있는데 연결이 안 된 상태면 껐다 켜야 재바인드된다 (값이 안 변하면 no-op).
+            val ok = if (TapInjectionService.isEnabledInSettings(this)) {
+                AccessibilityPermission.rebind(this)
+            } else {
+                AccessibilityPermission.enableSelf(this)
+            }
+            val msg = if (ok) R.string.accessibility_self_enabled else R.string.accessibility_self_failed
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            updateStatus()
+            return
+        }
+
+        Toast.makeText(this, R.string.accessibility_open_settings_hint, Toast.LENGTH_LONG).show()
+        AccessibilityPermission.openServiceSettings(this)
     }
 
     /**

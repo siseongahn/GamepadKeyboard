@@ -1,9 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- 다른 앱 위에 그리기: TYPE_APPLICATION_OVERLAY 윈도우를 추가하려면 필수.
          선언만으로는 부족하고 Settings.canDrawOverlays() 로 사용자 승인을 받아야 한다. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- 접근성 서비스를 앱이 코드로 켜기 위한 권한 (AccessibilityPermission.enableSelf).
+         보호수준이 signature|privileged|development 라서 일반 배포로는 절대 부여되지 않는다.
+         development 플래그 덕에 adb 로만 부여할 수 있다:
+           adb shell pm grant com.example.keyboardoverlay android.permission.WRITE_SECURE_SETTINGS
+         부여되지 않으면 앱은 설정 화면으로 안내하는 경로로 자동 폴백한다.
+         (Play 배포 APK 에서는 선언만 남고 아무 효과가 없다.) -->
+    <uses-permission
+        android:name="android.permission.WRITE_SECURE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
 
     <application
         android:allowBackup="false"

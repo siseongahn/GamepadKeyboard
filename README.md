@@ -218,6 +218,78 @@ dialogOverlay.onCursorClick = { point -> injectTapAt(point) }   // MainActivity
 TapInjectionService.instance?.tapAt(point.x, point.y)
 ```
 
+### 접근성 서비스를 앱이 켜는 방법
+
+**결론: 일반 배포 앱은 스스로 켤 수 없다.** `Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES` 쓰기에 `WRITE_SECURE_SETTINGS` 가 필요하고, 이 권한은 `signature|privileged|development` 라서 Play 로 배포한 앱에는 절대 부여되지 않는다. 부여된다면 악성 앱이 사용자 모르게 화면을 읽고 터치를 주입할 수 있으니 막혀 있는 게 정상이다.
+
+`AccessibilityPermission` 이 가능한 경로를 모두 담고 있고, 권한 유무에 따라 자동으로 갈라진다.
+
+| 경로 | 대상 | 사용자 조작 | 실측 |
+|---|---|---|---|
+| `enableSelf()` — 설정에 직접 쓰기 | 개발/테스트/키오스크 | **없음** | ✅ 아래 참조 |
+| `openServiceSettings()` — 설정 화면으로 안내 | 일반 배포 | 토글 1회 (필수) | ✅ 아래 참조 |
+| Device Owner (MDM) | 사내 배포 | 없음 (프로비저닝 시 정책) | 미검증 |
+
+#### 1. 코드로 직접 켜기 (개발/테스트)
+
+`WRITE_SECURE_SETTINGS` 는 `development` 플래그가 있어 **adb 로 부여할 수 있다.** 시스템 서명 없이도 된다.
+
+```bash
+adb shell pm grant com.example.keyboardoverlay android.permission.WRITE_SECURE_SETTINGS
+```
+
+부여 후 앱의 `접근성 서비스 켜기` 버튼을 누르면 설정 화면을 거치지 않고 바로 켜진다. API 33 에뮬레이터 실측:
+
+```
+A11yPermission: 접근성 설정 직접 변경: enabled=true, value='...TapInjectionService'
+TapInjection:   접근성 서비스 연결됨 (제스처 주입 가능)      ← 0.1초 뒤 연결
+```
+
+주의할 점:
+
+- **다른 접근성 서비스를 덮어쓰지 말 것.** 이 설정은 `:` 로 구분된 목록이다. 통째로 덮으면 사용자의 TalkBack 이 꺼진다 — 시각장애 사용자에게는 심각한 사고다. `enableSelf()` 는 기존 항목을 파싱해 보존하고 자기 것만 추가한다.
+- `accessibility_enabled` 는 접근성 기능 **전체** 스위치다. 목록이 비면 0, 하나라도 있으면 1로 맞춰야 한다.
+- **재바인드에는 껐다 켜기가 필요하다.** 앱 프로세스가 죽으면 서비스도 죽는데, AMS 는 설정값이 *변할 때만* 재바인드한다. 값이 그대로면 다시 써도 no-op 이다. `rebind()` 가 이걸 처리한다.
+
+#### 2. 설정 화면으로 안내하기 (일반 배포)
+
+`openServiceSettings()` 가 후보 3개를 순서대로 시도한다.
+
+| 후보 | 결과 |
+|---|---|
+| `android.settings.ACCESSIBILITY_DETAILS_SETTINGS` (서비스 상세 직행) | ❌ 권한 부족으로 실패 |
+| 접근성 설정 + `:settings:fragment_args_key` (항목 강조) | ROM 에 따라 다름 |
+| 접근성 설정 최상단 | ✅ 항상 동작 |
+
+첫 후보는 매력적이지만 **일반 앱은 쓸 수 없다.** 공개 API 상수가 아예 없고(설치된 SDK 34/36/37.1 모두 `Settings` 에 없음), 호출에 별도 권한을 요구한다:
+
+```
+SecurityException: Permission Denial: starting Intent { act=...ACCESSIBILITY_DETAILS_SETTINGS }
+  requires android.permission.OPEN_ACCESSIBILITY_DETAILS_SETTINGS
+```
+
+`resolveActivity()` 로는 걸러지지 않는다 — 컴포넌트는 존재하고 권한 단계에서 막히므로 **try/catch 가 필수**다. 시스템 앱으로 서명해 배포한다면 이 경로가 가장 깔끔하다.
+
+#### 상태를 세 가지로 구분할 것
+
+"설정에서 켜짐" 과 "실제로 연결됨" 은 다른 값이다. 사용자가 켰는데도 시스템이 바인드하지 못하는 경우가 실제로 있다.
+
+```
+enabled services: { ...TapInjectionService }   ← 설정 ON
+binding services: { ...TapInjectionService }   ← 바인드 시도에서 멈춤
+bound services:   { }                          ← 연결 안 됨
+```
+
+이 상태에서 `instance == null` 만 보고 "꺼져 있습니다" 라고 안내하면 사용자는 이미 켰으니 혼란스럽다. `TapInjectionService.isEnabledInSettings()` 로 설정값을 따로 읽어 구분한다.
+
+| 상태 | 표시 | 안내 |
+|---|---|---|
+| `isConnected` | 연결됨 | — |
+| 설정 ON + 미연결 | 설정 ON·미연결 | 껐다 켜기, 안 되면 재부팅 |
+| 설정 OFF | 꺼짐 | 설정에서 켜기 |
+
+실제로 이 프로젝트를 실측하다 `binding` 에 항목이 남아 껐다 켜도 절대 연결되지 않는 상태를 만났다(설정을 끈 뒤에도 `binding services` 가 비지 않았다). AMS 재시작(= 재부팅)으로만 풀렸다.
+
 ### 주입한 제스처도 오버레이가 먹을 수 있다
 
 `dispatchGesture` 로 넣은 터치도 **일반 터치 디스패치를 탄다.** 따라서 오버레이가 그 좌표에서 터치를 받는 상태(`FLAG_NOT_TOUCHABLE` 없음)면 키보드가 아니라 오버레이가 먼저 먹는다. 커서는 반드시 `NOT_TOUCHABLE` 오버레이 위에 있어야 한다. 앱의 `터치까지 차단` 스위치를 켜면 이 현상을 직접 재현할 수 있고, 실측 스크립트의 대조군이 정확히 이것을 측정한다.
@@ -233,12 +305,19 @@ TapInjectionService.instance?.tapAt(point.x, point.y)
 3. `권한 없이 Dialog 로 덮기 (ALT_FOCUSABLE_IM)` → 초록 커서가 키보드 중앙에 나타난다
 4. 게임패드 **DPAD** 로 커서를 원하는 키 위로 이동 → **A 버튼** (또는 DPAD 중앙/Enter) 으로 입력
 
-adb 로 접근성 권한을 바로 주려면:
+adb 로 접근성 권한을 바로 주려면 (설정을 직접 쓰는 방법):
 
 ```bash
 adb shell settings put secure enabled_accessibility_services \
     com.example.keyboardoverlay/com.example.keyboardoverlay.TapInjectionService
 adb shell settings put secure accessibility_enabled 1
+```
+
+또는 앱이 스스로 켜게 만들려면 ([접근성 서비스를 앱이 켜는 방법](#접근성-서비스를-앱이-켜는-방법) 참조):
+
+```bash
+adb shell pm grant com.example.keyboardoverlay android.permission.WRITE_SECURE_SETTINGS
+# 이후 앱의 "접근성 서비스 켜기" 버튼만 누르면 된다
 ```
 
 > ⚠️ **앱이 실행된 뒤에** 켜야 한다. 앱 프로세스가 죽으면 접근성 서비스도 같이 죽는데(`Force stopping service`), AMS 는 `enabled_accessibility_services` **설정이 다시 쓰일 때만** 재바인드한다. 값이 이미 들어 있으면 쓰기가 no-op 이 되므로, 껐다 켜서 변화를 만들어야 한다.
@@ -320,7 +399,8 @@ app/src/main/
 │   ├── KeyboardInsetWatcher.kt                키보드 높이 감지 (R+ / 레거시 분기)
 │   ├── KeyboardOverlayController.kt           ① WindowManager 오버레이 (권한 필요)
 │   ├── DialogOverlayController.kt             ② Dialog + ALT_FOCUSABLE_IM + 게임패드 커서
-│   └── TapInjectionService.kt                 ③ 접근성 서비스 — 좌표에 터치 제스처 주입
+│   ├── TapInjectionService.kt                 ③ 접근성 서비스 — 좌표에 터치 제스처 주입
+│   └── AccessibilityPermission.kt             ③ 접근성 권한 켜기 (직접 쓰기 / 설정 안내)
 └── res/
     ├── layout/activity_main.xml
     ├── layout/overlay_keyboard_icons.xml      ① 오버레이 내용물 (파란 아이콘)
@@ -370,6 +450,15 @@ Galaxy Note8 (SM-N950N, Android 9 / API 28, 삼성 키보드) 에서 확인.
 | 게임패드 A → 좌표에 제스처 주입 | ✅ `dispatchGesture` 접수·완료 |
 | 주입 제스처 → 키 눌림 | ✅ `'h'` 입력됨 |
 | 터치 차단 시 주입 제스처 | ✅ 입력 없음 (오버레이가 먹음) |
+
+접근성 권한 켜기는 API 33 에뮬레이터에서 확인 (`WRITE_SECURE_SETTINGS` 는 기기 종류와 무관한 AOSP 동작).
+
+| 항목 | 결과 |
+|---|---|
+| `adb pm grant WRITE_SECURE_SETTINGS` | ✅ `development` 보호수준이라 부여됨 |
+| 앱이 코드로 자체 활성화 | ✅ 설정 화면 없이 켜지고 0.14초 뒤 연결 |
+| 권한 회수 후 폴백 | ✅ 상세 페이지 실패 → 접근성 설정 화면으로 이동, 설정값 변화 없음 |
+| 연결 상태 표시 갱신 | ✅ 콜백으로 `연결됨` 으로 즉시 바뀜 |
 
 > 터치 차단 모드는 커서 위치뿐 아니라 **오버레이 윈도우 전체(= 키보드 전 영역)** 의 터치를 먹는다. 특정 영역만 막고 싶다면 루트를 `NOT_TOUCHABLE` 로 두고 그 영역에만 별도의 작은 오버레이 윈도우를 붙여야 한다.
 
